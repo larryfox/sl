@@ -68,7 +68,10 @@ func (t *template) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		err := client.Post("sites/SITE_ID_GOES_HERE/preview", &rendered, &params)
 
 		if err != nil {
-			printFatal(err.Error())
+			printError(err.Error())
+			// TODO: return a real error code
+			http.Error(rw, err.Error(), 500)
+			return
 		}
 
 		// These branches return almost the same thing. Simplify it.
@@ -89,7 +92,7 @@ func readFile(filename string) string {
 func (t *template) filename() (str string, err error) {
 	for _, filename := range t.potentialFiles() {
 		fs, err := os.Stat(filename)
-		if !os.IsNotExist(err) || (fs != nil && !fs.IsDir()) {
+		if !os.IsNotExist(err) && (fs != nil && !fs.IsDir()) {
 			return filename, nil
 		}
 	}
