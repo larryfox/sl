@@ -54,6 +54,7 @@ func (t *template) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// FIXME: These branches do almost the same thing. Simplify it.
 	if ext := path.Ext(filename); ext == ".liquid" || ext == ".html" {
 		var rendered bytes.Buffer
 
@@ -65,6 +66,7 @@ func (t *template) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}{t.path, template}
 
 		// TODO: load the site id before getting here
+		// FIXME: increase the timeout in the client
 		err := client.Post("sites/SITE_ID_GOES_HERE/preview", &rendered, &params)
 
 		if err != nil {
@@ -74,18 +76,19 @@ func (t *template) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		// These branches return almost the same thing. Simplify it.
 		http.ServeContent(rw, req, t.path, time.Now(), strings.NewReader(rendered.String()))
 	} else {
-		http.ServeContent(rw, req, t.path, time.Now(), strings.NewReader(readFile(filename)))
-	}
-}
 
-func readFile(filename string) string {
-	if body, err := ioutil.ReadFile(filename); err != nil {
-		return err.Error()
-	} else {
-		return string(body[:])
+		body, err := ioutil.ReadFile(filename)
+
+		if err != nil {
+			printError(err.Error())
+			// TODO: return a real error code
+			http.Error(rw, err.Error(), 500)
+			return
+		}
+
+		http.ServeContent(rw, req, t.path, time.Now(), strings.NewReader(string(body[:])))
 	}
 }
 
