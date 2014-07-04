@@ -20,7 +20,7 @@ func printWarning(message string, args ...interface{}) {
 }
 
 func prefixWith(a, b string) string {
-	 return a + " " + b
+	return a + " " + b
 }
 
 func currentUser() (usr *user.User) {
