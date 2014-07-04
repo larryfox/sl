@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io/ioutil"
 	"log"
-	"path"
 	"regexp"
 )
 
@@ -15,7 +14,7 @@ var liquidRegex = regexp.MustCompile(`{%\s*include\s*['"](.*)['"]\s*%}`)
 // It implements io.ReadSeeker so it can be passed directly
 // to an http response.
 type Template struct {
-	Filename string
+	filename string
 	content  *bytes.Reader
 }
 
@@ -23,14 +22,12 @@ type Template struct {
 func New(p string) (*Template, error) {
 	filename, err := ResolvePath(p)
 
-	log.Println(filename)
-
 	if err != nil {
 		return nil, err
 	}
 
 	tmpl := &Template{
-		Filename: filename,
+		filename: filename,
 		content:  newReader(filename),
 	}
 
@@ -49,17 +46,18 @@ func (t *Template) Seek(offset int64, whence int) (int64, error) {
 	return t.content.Seek(offset, whence)
 }
 
+func (t *Template) String() string {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(t)
+	return buf.String()
+}
+
+func (t *Template) Filename() string {
+	return t.filename
+}
+
 func newReader(filename string) *bytes.Reader {
-	var content []byte
-
-	switch path.Ext(filename) {
-	case ".liquid", ".html":
-		content = readLiquid(filename)
-	default:
-		content = readFile(filename)
-	}
-
-	return bytes.NewReader(content)
+	return bytes.NewReader(readLiquid(filename))
 }
 
 func readLiquid(filename string) []byte {
