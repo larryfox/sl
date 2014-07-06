@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/larryfox/sl/template"
-	"github.com/larryfox/handlers"
 )
 
 var server = &command{
@@ -24,14 +23,18 @@ func startServer(_ *command, _ []string) {
 	fmt.Printf("Listening on localhost%s (ctrl+C to exit)\n", ":9292")
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", handlers.Use(localHandler, templateHandler))
+	mux.Handle("/", serveLocalFile(templateHandler))
 	http.ListenAndServe(":9292", mux)
 }
 
-func localHandler(w http.ResponseWriter, req *http.Request) {
-	f := filenameFromPath(req.URL.Path)
-	if isLocalFile(f) && !isLiquid(f) {
-		http.ServeFile(w, req, f)
+func serveLocalFile(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		f := strings.Trim(req.URL.Path, "/")
+		if isLocalFile(f) && !isLiquid(f) {
+			http.ServeFile(w, req, f)
+		} else {
+			next(w, req)
+		}
 	}
 }
 
@@ -80,8 +83,4 @@ func isLocalFile(f string) bool {
 func isLiquid(f string) bool {
 	ext := path.Ext(f)
 	return ext == ".liquid" || ext == ".html"
-}
-
-func filenameFromPath(p string) string {
-	return strings.Trim(p, "/")
 }
