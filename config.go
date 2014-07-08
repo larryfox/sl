@@ -15,8 +15,6 @@ var cmdConfig = &command{
 	usage:       `sl config <domain> [<dir>]`,
 }
 
-var currentSiteId string
-
 func runConfig(cmd *command, args []string) {
 	var path string
 
@@ -43,8 +41,8 @@ func runConfig(cmd *command, args []string) {
 }
 
 type site struct {
-	SiteId string `site_id`
-	Port   string `port,omitempty`
+	Id   string `site_id`
+	Port string `port,omitempty`
 }
 
 func writeSiteConfigFile(id, path string) {

@@ -72,7 +72,7 @@ func renderTemplate(path string, tmpl *template.Template) (*bytes.Reader, error)
 
 	// TODO: load the site id before getting here
 	// FIXME: increase the timeout in the client
-	err := client.Post("sites/"+currentSiteId+"/preview", &rendered, &params)
+	err := client.Post("sites/"+currentSite.Id+"/preview", &rendered, &params)
 
 	return bytes.NewReader(rendered.Bytes()), err
 }
