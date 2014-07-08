@@ -17,7 +17,7 @@ func ResolvePath(path string) (string, error) {
 		return !os.IsNotExist(err) && (fs != nil && !fs.IsDir())
 	}
 
-	return find(existing)(files)
+	return find(existing, files)
 }
 
 type NoTemplate struct {
@@ -65,14 +65,12 @@ func potentialFiles(p string) (files []string) {
 	return
 }
 
-func find(found func(string) bool) func([]string) (string, error) {
-	return func(arr []string) (str string, err error) {
-		for _, x := range arr {
-			if found(x) {
-				return x, nil
-			}
+func find(found func(string) bool, arr []string) (str string, err error) {
+	for _, x := range arr {
+		if found(x) {
+			return x, nil
 		}
-		err = &NoTemplate{arr}
-		return
 	}
+	err = &NoTemplate{arr}
+	return
 }
