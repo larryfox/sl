@@ -12,14 +12,15 @@ import (
 	"github.com/larryfox/sl/template"
 )
 
-var server = &command{
-	name:        "server",
-	handler:     startServer,
+var cmdServer = &command{
+	Name:        "server",
+	handler:     runServer,
 	requireAuth: true,
+	requireSite: true,
 	usage:       `sl server [--port]`,
 }
 
-func startServer(_ *command, _ []string) {
+func runServer(_ *command, _ []string) {
 	fmt.Printf("Listening on localhost%s (ctrl+C to exit)\n", ":9292")
 
 	mux := http.NewServeMux()
@@ -30,6 +31,7 @@ func startServer(_ *command, _ []string) {
 func serveLocalFile(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		f := strings.Trim(req.URL.Path, "/")
+
 		if isLocalFile(f) && !isLiquid(f) {
 			http.ServeFile(w, req, f)
 		} else {
@@ -70,7 +72,7 @@ func renderTemplate(path string, tmpl *template.Template) (*bytes.Reader, error)
 
 	// TODO: load the site id before getting here
 	// FIXME: increase the timeout in the client
-	err := client.Post("sites/SITE_ID/preview", &rendered, &params)
+	err := client.Post("sites/"+currentSiteId+"/preview", &rendered, &params)
 
 	return bytes.NewReader(rendered.Bytes()), err
 }

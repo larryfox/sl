@@ -7,7 +7,16 @@ import (
 	"github.com/larryfox/siteleaf-go"
 )
 
-var client = siteleaf.NewClient()
+const (
+	configYAML   = ".config.yml"
+	siteleafYAML = ".siteleaf.yml"
+)
+
+var (
+	client           = siteleaf.NewClient()
+	siteleafYAMLPath = absPath(systemUser().HomeDir, siteleafYAML)
+	currentSite      site
+)
 
 func main() {
 	log.SetFlags(0)
@@ -15,7 +24,7 @@ func main() {
 	args := os.Args[1:]
 
 	if len(args) == 0 {
-		help.PrintSummary()
+		cmdHelp.PrintSummary()
 		os.Exit(2)
 	}
 
@@ -23,23 +32,23 @@ func main() {
 	default:
 		log.Printf("Unknown option: %s. See 'sl help'.", args[0])
 		os.Exit(2)
-	case help.name:
-		help.Handler(args)
-	case auth.name:
-		auth.Handler(args)
-	case config.name:
-		config.Handler(args)
-	case newCmd.name:
-		newCmd.Handler(args)
-	case server.name:
-		server.Handler(args)
+	case cmdHelp.Name:
+		cmdHelp.Handler(args)
+	case cmdAuth.Name:
+		cmdAuth.Handler(args)
+	case cmdConfig.Name:
+		cmdConfig.Handler(args)
+	case cmdNew.Name:
+		cmdNew.Handler(args)
+	case cmdServer.Name:
+		cmdServer.Handler(args)
 	case "push":
 		printWarning("TODO Theme Push")
 	case "pull":
 		printWarning("TODO Theme Pull")
 	case "open":
 		printWarning("TODO Open")
-	case whoami.name:
-		whoami.Handler(args)
+	case cmdWhoami.Name:
+		cmdWhoami.Handler(args)
 	}
 }

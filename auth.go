@@ -4,57 +4,60 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/bgentry/speakeasy"
-	"github.com/larryfox/prompt"
+	"github.com/larryfox/go-prompt"
+	"gopkg.in/yaml.v1"
 )
 
-var auth = &command{
-	name:        "auth",
-	handler:     authenticateUser,
+var cmdAuth = &command{
+	Name:        "auth",
+	handler:     runAuth,
 	requireAuth: false,
 }
 
-var siteleafrc = absPath(currentUser().HomeDir, ".siteleafrc")
-
-func authenticateUser(_ *command, _ []string) {
-	user := prompt.Ask("Enter user email: ")
+func runAuth(_ *command, _ []string) {
+	email, _ := prompt.Ask("Enter user email: ")
 	pass, _ := speakeasy.Ask("Enter user password: ")
 
-	err := client.Auth(user, pass)
+	err := client.Auth(email, pass)
 
 	if err != nil {
 		printError("Could not authenticate :(")
 	}
 
+	writeAuthFile()
+
 	log.Println("Authorized!")
-	saveAuthFile()
 }
 
-func saveAuthFile() {
-	file, err := os.Create(siteleafrc)
-
-	if err != nil {
-		printFatal("Could not open or create %v for writing.", siteleafrc)
-	}
-
-	file.WriteString(client.ApiKey + "\n" + client.ApiSecret)
+type auth struct {
+	ApiKey    string `api_key`
+	ApiSecret string `api_secret`
 }
 
-func loadAuthFile() {
-	content, err := ioutil.ReadFile(siteleafrc)
-
+func writeAuthFile() {
+	file, err := os.Create(siteleafYAMLPath)
 	if err != nil {
-		printError("Could not open %v, have you ran 'sl auth' yet?", siteleafrc)
+		printFatal("Could not open or create %v for writing.", siteleafYAMLPath)
 	}
 
-	lines := strings.Split(string(content), "\n")
+	yml, err := yaml.Marshal(&auth{client.ApiKey, client.ApiSecret})
+	checkFatal(err)
+	file.Write(yml)
+}
 
-	if len(lines) < 2 || len(lines[0]) == 0 || len(lines[1]) == 0 {
-		printError("Not authorized, have you ran 'sl auth' yet?")
+func readAuthFile() {
+	var conf auth
+
+	content, err := ioutil.ReadFile(siteleafYAMLPath)
+	if err != nil {
+		printFatal("Could not open %v, have you ran 'sl auth' yet?", siteleafYAMLPath)
 	}
 
-	client.ApiKey = lines[0]
-	client.ApiSecret = lines[1]
+	err = yaml.Unmarshal(content, &conf)
+	checkFatal(err)
+
+	client.ApiKey = conf.ApiKey
+	client.ApiSecret = conf.ApiSecret
 }

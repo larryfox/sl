@@ -6,14 +6,14 @@ import (
 	"strings"
 )
 
-var newCmd = &command{
-	name:        "new",
-	handler:     createSite,
+var cmdNew = &command{
+	Name:        "new",
+	handler:     runNew,
 	requireAuth: true,
 	usage:       `sl new [--title] <domain> [<dir>]`,
 }
 
-func createSite(cmd *command, args []string) {
+func runNew(cmd *command, args []string) {
 	var path string
 	var title string
 
@@ -32,7 +32,7 @@ func createSite(cmd *command, args []string) {
 		if strings.Contains(err.Error(), "domain is taken") {
 			printError("Domain is already taken. Try 'sl config %s'.", args[1])
 		} else {
-			printFatal(err.Error())
+			printFatal("%v", err)
 		}
 		os.Exit(1)
 	}
@@ -44,5 +44,5 @@ func createSite(cmd *command, args []string) {
 	}
 
 	fmt.Println(path)
-	saveSiteConfigFile(site.Id, path)
+	writeSiteConfigFile(site.Id, path)
 }

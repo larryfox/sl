@@ -23,17 +23,19 @@ func prefixWith(a, b string) string {
 	return a + " " + b
 }
 
-func currentUser() (usr *user.User) {
+func systemUser() (usr *user.User) {
 	usr, err := user.Current()
-
-	if err != nil {
-		printFatal("%v", err)
-	}
-
+	checkFatal(err)
 	return
 }
 
 func absPath(paths ...string) string {
 	path, _ := filepath.Abs(filepath.Join(paths...))
 	return path
+}
+
+func checkFatal(err error) {
+	if err != nil {
+		printFatal("%v", err)
+	}
 }

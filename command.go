@@ -5,16 +5,21 @@ import (
 )
 
 type command struct {
-	name        string
+	Name        string
 	handler     func(*command, []string)
 	requireAuth bool
+	requireSite bool
 	usage       string
 	summary     string
 }
 
 func (cmd *command) Handler(args []string) {
 	if cmd.requireAuth {
-		loadAuthFile()
+		readAuthFile()
+	}
+
+	if cmd.requireSite {
+		readSiteConfigFile()
 	}
 
 	cmd.handler(cmd, args)

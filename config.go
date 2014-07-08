@@ -1,19 +1,23 @@
 package main
 
 import (
-	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"gopkg.in/yaml.v1"
 )
 
-var config = &command{
-	name:        "config",
-	handler:     configureSite,
+var cmdConfig = &command{
+	Name:        "config",
+	handler:     runConfig,
 	requireAuth: true,
 	usage:       `sl config <domain> [<dir>]`,
 }
 
-func configureSite(cmd *command, args []string) {
+var currentSiteId string
+
+func runConfig(cmd *command, args []string) {
 	var path string
 
 	if len(args) < 2 {
@@ -30,27 +34,43 @@ func configureSite(cmd *command, args []string) {
 	}
 
 	if len(args) > 2 {
-		path = absPath(args[2], ".siteleaf")
+		path = absPath(args[2], configYAML)
 	} else {
-		path = absPath(args[1], ".siteleaf")
+		path = absPath(args[1], configYAML)
 	}
 
-	fmt.Println(path)
-	saveSiteConfigFile(site.Id, path)
+	writeSiteConfigFile(site.Id, path)
 }
 
-func saveSiteConfigFile(id, path string) {
-	dir := filepath.Dir(path)
+type site struct {
+	SiteId string `site_id`
+	Port   string `port,omitempty`
+}
 
+func writeSiteConfigFile(id, path string) {
+	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		printFatal("Could not create directory %v.", path)
 	}
 
 	file, err := os.Create(path)
-
 	if err != nil {
 		printFatal("Could not open or create %v for writing.", path)
 	}
 
-	file.WriteString(id)
+	yml, err := yaml.Marshal(&site{id, ""})
+	checkFatal(err)
+	file.Write(yml)
+}
+
+func readSiteConfigFile() {
+	filepath := absPath(configYAML)
+	content, err := ioutil.ReadFile(filepath)
+
+	if err != nil {
+		printFatal("Could not open %v, have you ran 'sl config' yet?", filepath)
+	}
+
+	err = yaml.Unmarshal(content, &currentSite)
+	checkFatal(err)
 }
