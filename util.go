@@ -8,19 +8,15 @@ import (
 )
 
 func printError(message string, args ...interface{}) {
-	log.Println(prefixWith("error:", fmt.Sprintf(message, args...)))
+	log.Println("error: " + fmt.Sprintf(message, args...))
 }
 
 func printFatal(message string, args ...interface{}) {
-	log.Fatalln(prefixWith("fatal:", fmt.Sprintf(message, args...)))
+	log.Fatalln("fatal: " + fmt.Sprintf(message, args...))
 }
 
 func printWarning(message string, args ...interface{}) {
-	log.Println(prefixWith("warning:", fmt.Sprintf(message, args...)))
-}
-
-func prefixWith(a, b string) string {
-	return a + " " + b
+	log.Println("warning: " + fmt.Sprintf(message, args...))
 }
 
 func systemUser() (usr *user.User) {
