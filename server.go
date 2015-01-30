@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/larryfox/sl/template"
 )
@@ -32,7 +31,7 @@ func serveLocalFile(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		f := strings.Trim(req.URL.Path, "/")
 
-		if isLocalFile(f) && !isLiquid(f) {
+		if !isLiquid(f) && localFileExists(f) {
 			http.ServeFile(w, req, f)
 		} else {
 			next(w, req)
@@ -42,27 +41,27 @@ func serveLocalFile(next http.HandlerFunc) http.HandlerFunc {
 
 func templateHandler(w http.ResponseWriter, req *http.Request) {
 	tmpl, err := template.New(req.URL.Path)
-
 	if err != nil {
 		printWarning(err.Error())
 		http.Error(w, err.Error(), 500)
 		return
 	}
-
-	fmt.Printf("    %s -> %s\n", req.URL.Path, tmpl.Filename())
 
 	body, err := renderTemplate(req.URL.Path, tmpl)
-
 	if err != nil {
 		printWarning(err.Error())
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
-	http.ServeContent(w, req, req.URL.Path, time.Now(), body)
+	if !strings.HasPrefix(req.URL.Path, "/assets/") {
+		fmt.Printf("    %s -> %s\n", req.URL.Path, tmpl.Filename())
+	}
+
+	body.WriteTo(w)
 }
 
-func renderTemplate(path string, tmpl *template.Template) (*bytes.Reader, error) {
+func renderTemplate(path string, tmpl *template.Template) (bytes.Buffer, error) {
 	var rendered bytes.Buffer
 
 	params := struct {
@@ -74,10 +73,10 @@ func renderTemplate(path string, tmpl *template.Template) (*bytes.Reader, error)
 	// FIXME: increase the timeout in the client
 	err := client.Post("sites/"+currentSite.Id+"/preview", &rendered, &params)
 
-	return bytes.NewReader(rendered.Bytes()), err
+	return rendered, err
 }
 
-func isLocalFile(f string) bool {
+func localFileExists(f string) bool {
 	fs, err := os.Stat(f)
 	return !os.IsNotExist(err) && (fs != nil && !fs.IsDir())
 }
